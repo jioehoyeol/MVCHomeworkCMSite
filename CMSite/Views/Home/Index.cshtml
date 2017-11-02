@@ -1,0 +1,36 @@
+﻿@{
+    ViewBag.Title = "CMSite";
+    var GoogleClassroom = @"https://classroom.google.com/c/OTE3MjUyNDE4MFpa";
+    var HomeworkOne = @"https://classroom.google.com/c/OTE3MjUyNDE4MFpa/a/OTE4MTQ5OTc5NVpa/details";
+    var HomeworkOneDesc = @"
+* 請使用「客戶資料」這個資料庫做開發(如附件檔案)
+* 請實作出「客戶資料管理」、「客戶聯絡人管理」與「客戶銀行帳戶管理」等簡易 CRUD 功能(盡量做各種功能出來)
+* 在列表頁要實作「搜尋」功能
+* 主選單要有連結可以直接連到三個主要功能的列表頁。
+* 對於 Create 與 Edit 表單要套用欄位驗證 (必填、Email格式、欄位長度限制等驗證)
+* 實作「客戶聯絡人」時，同一個客戶下的聯絡人，其 Email 不能重複。";
+}
+
+<div class="jumbotron">
+    <h1>ASP.NET MVC 5</h1>
+    <h2>開發實戰課後作業</h2>
+    <p><a href="@GoogleClassroom" class="btn btn-primary btn-lg">前往教室 &raquo;</a></p>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <h2>第一週作業</h2>
+        <pre>@HomeworkOneDesc</pre>
+        <p><a class="btn btn-default" href="@HomeworkOne">more &raquo;</a></p>
+    </div>
+    <div class="col-md-4">
+        <h2>第二週作業</h2>
+        <pre>尚未說明</pre>
+        <p><a class="btn btn-default" href="#">more &raquo;</a></p>
+    </div>
+    <div class="col-md-4">
+        <h2>第三週作業</h2>
+        <pre>尚未說明</pre>
+        <p><a class="btn btn-default" href="#">more &raquo;</a></p>
+    </div>
+</div>
