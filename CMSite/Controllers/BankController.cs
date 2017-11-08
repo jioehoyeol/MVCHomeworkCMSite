@@ -17,19 +17,15 @@ namespace CMSite.Controllers
         // GET: Bank
         public ActionResult Index(string keyword)
         {
-            IQueryable<Models.客戶銀行資訊> result = null;
+            IQueryable<Models.客戶銀行資訊> result = from b in db.客戶銀行資訊
+                                               where b.IsDelete == false
+                                               select b;
 
             if (!string.IsNullOrEmpty(keyword))
             {
-                result = from bank in db.客戶銀行資訊
-                         where bank.帳戶名稱.Contains(keyword)
-                            || bank.銀行名稱.Contains(keyword)
-                            || bank.客戶資料.客戶名稱.Contains(keyword)
-                         select bank;
-            }
-            else
-            {
-                result = db.客戶銀行資訊.Include(客 => 客.客戶資料);
+                result = result.Where(bank => bank.帳戶名稱.Contains(keyword)
+                                           || bank.銀行名稱.Contains(keyword)
+                                           || bank.客戶資料.客戶名稱.Contains(keyword));
             }
 
             return View(result.ToList());
@@ -129,7 +125,8 @@ namespace CMSite.Controllers
         public ActionResult DeleteConfirmed(int id)
         {
             客戶銀行資訊 客戶銀行資訊 = db.客戶銀行資訊.Find(id);
-            db.客戶銀行資訊.Remove(客戶銀行資訊);
+            //db.客戶銀行資訊.Remove(客戶銀行資訊);
+            客戶銀行資訊.IsDelete = true;
             db.SaveChanges();
             return RedirectToAction("Index");
         }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
 using System.Linq;
+using System.Linq.Dynamic;
 using System.Net;
 using System.Web;
 using System.Web.Mvc;
@@ -15,20 +16,59 @@ namespace CMSite.Controllers
         private CustomerEntities db = new CustomerEntities();
 
         // GET: Contact
-        public ActionResult Index(string keyword)
+        public ActionResult Index(string keyword, string jobtitle, bool? sort, string orderby, string descYn)
         {
-            IQueryable<Models.客戶聯絡人> searchResult = null;
+            IQueryable<Models.客戶聯絡人> result = db.客戶聯絡人.Where(d => d.IsDelete == false);
+
+            ViewBag.JobTitleList = result.Select(r => r.職稱).Distinct();
 
             if (!string.IsNullOrEmpty(keyword))
             {
-                searchResult = db.客戶聯絡人.Where(o => o.姓名.Contains(keyword));
-            }
-            else
-            {
-                searchResult = db.客戶聯絡人.Include(客 => 客.客戶資料);
+                result = result.Where(o => o.姓名.Contains(keyword));
             }
 
-            return View(searchResult.ToList());
+            if (!string.IsNullOrEmpty(jobtitle))
+            {
+                result = result.Where(o => o.職稱 == jobtitle);
+            }
+
+            if (sort != null && sort.Value)
+            {
+                descYn = descYn == "Y" ? "N" : "Y";
+            }
+
+
+            if (!string.IsNullOrEmpty(descYn) && !string.IsNullOrEmpty(orderby))
+            {
+                if (descYn.Equals("Y"))
+                {
+                    if (orderby.Equals("客戶名稱"))
+                    {
+                        result = result.OrderByDescending(o => o.客戶資料.客戶名稱);
+                    }
+                    else
+                    {
+                        result = result.OrderBy(orderby + " DESC");
+                    }
+                }
+                else
+                {
+                    if (orderby.Equals("客戶名稱"))
+                    {
+                        result = result.OrderBy(o => o.客戶資料.客戶名稱);
+                    }
+                    else
+                    {
+                        result = result.OrderBy(orderby);
+                    }
+                }
+            }
+            ViewBag.Keyword = keyword;
+            ViewBag.JobTitle = jobtitle;
+            ViewBag.OrderBy = orderby;
+            ViewBag.DescYn = descYn;
+
+            return View(result);
         }
 
         // GET: Contact/Details/5
@@ -139,7 +179,8 @@ namespace CMSite.Controllers
         public ActionResult DeleteConfirmed(int id)
         {
             客戶聯絡人 客戶聯絡人 = db.客戶聯絡人.Find(id);
-            db.客戶聯絡人.Remove(客戶聯絡人);
+            //db.客戶聯絡人.Remove(客戶聯絡人);
+            客戶聯絡人.IsDelete = true;
             db.SaveChanges();
             return RedirectToAction("Index");
         }

@@ -1,12 +1,11 @@
-﻿using System;
+﻿using CMSite.Models;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
 using System.Linq;
+using System.Linq.Dynamic;
 using System.Net;
-using System.Web;
 using System.Web.Mvc;
-using CMSite.Models;
 
 namespace CMSite.Controllers
 {
@@ -15,47 +14,115 @@ namespace CMSite.Controllers
         private CustomerEntities db = new CustomerEntities();
 
         // GET: Data
-        public ActionResult Index(string SearchId, string keyword, string sort)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="searchId"></param>
+        /// <param name="keyword"></param>
+        /// <param name="sort"></param>
+        /// <param name="orderby"></param>
+        /// <param name="descYn"></param>
+        /// <returns></returns>
+        public ActionResult Index(string searchId, string keyword, bool? sort, string orderby, string descYn)
         {
-            IQueryable<Models.客戶資料> result = null;
+            //組合客戶資料
+            var result = from d in db.客戶資料
+                         join c in db.Control
+                            on new { p1 = "Category", p2 = d.客戶分類 }
+                            equals new { p1 = c.TypeNo, p2 = c.KeyNo } into cd
+                         from c in cd.DefaultIfEmpty()
+                         where d.IsDelete == false
+                         select new CustomerDataViewModel
+                         {
+                             Id = d.Id,
+                             CustomerName = d.客戶名稱,
+                             TaxNumber = d.統一編號,
+                             Telephone = d.電話,
+                             Fax = d.傳真,
+                             Address = d.地址,
+                             Email = d.Email,
+                             Category = c.Value
+                         };
 
-            //選資料
+            //取得客戶分類可用的篩選選項
+            ViewBag.CategoryList = result.Select(r => r.Category).Distinct();
+
+            #region 篩選資料
             if (!string.IsNullOrEmpty(keyword))
             {
-                ViewBag.Keyword = keyword;
-                //result = db.客戶資料.Where(c => c.客戶名稱.Contains(keyword));
-
-                if (SearchId == "0")
-                    result = db.客戶資料.Where(e => e.客戶名稱.Contains(keyword));
-                else if (SearchId == "1")
-                    result = db.客戶資料.Where(e => e.統一編號.Contains(keyword));
-                else if (SearchId == "2")
-                    result = db.客戶資料.Where(e => e.電話.Contains(keyword));
-                else if (SearchId == "3")
-                    result = db.客戶資料.Where(e => e.傳真.Contains(keyword));
-                else if (SearchId == "4")
-                    result = db.客戶資料.Where(e => e.地址.Contains(keyword));
-                else if (SearchId == "5")
-                    result = db.客戶資料.Where(e => e.Email.Contains(keyword));
+                switch (searchId)
+                {
+                    case "0":
+                        result = result.Where(e => e.CustomerName.Contains(keyword));
+                        break;
+                    case "1":
+                        result = result.Where(e => e.TaxNumber.Contains(keyword));
+                        break;
+                    case "2":
+                        result = result.Where(e => e.Telephone.Contains(keyword));
+                        break;
+                    case "3":
+                        result = result.Where(e => e.Fax.Contains(keyword));
+                        break;
+                    case "4":
+                        result = result.Where(e => e.Address.Contains(keyword));
+                        break;
+                    case "5":
+                        result = result.Where(e => e.Email.Contains(keyword));
+                        break;
+                    case "6":
+                        result = result.Where(e => e.Category.Contains(keyword));
+                        break;
+                    default:
+                        break;
+                }
             }
-            else
-            {
-                result = db.客戶資料.AsQueryable();
-            }           
+            #endregion
 
-            //排序資料
-            if (!string.IsNullOrEmpty(sort))
+            #region 排序資料
+            if (sort != null && sort.Value)
             {
-                ViewBag.NameOrder = string.Empty;
-                result = result.OrderByDescending(o => o.客戶名稱);
+                descYn = descYn == "Y" ? "N" : "Y";
             }
-            else
+            if (!string.IsNullOrEmpty(descYn))
             {
-                ViewBag.NameOrder = "name_desc";
-                result = result.OrderBy(o => o.客戶名稱);
+                if (descYn.Equals("Y"))
+                {
+                    result = result.OrderBy(orderby + " DESC");
+                }
+                else
+                {
+                    result = result.OrderBy(orderby);
+                }
             }
 
-            return View(result.ToList());
+            #endregion
+
+            ViewBag.DescYn = descYn;
+            ViewBag.OrderBy = orderby;
+            ViewBag.Keyword = keyword;
+            ViewBag.SearchId = searchId;
+
+            return View(result);
+        }
+
+        // GET: Data/Statistics
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public ActionResult Statistics()
+        {
+            var result = from p in db.客戶資料
+                         select new CustomerStatisticViewModel
+                         {
+                             Id = p.Id,
+                             CustomerName = p.客戶名稱,
+                             ContactCount = p.客戶聯絡人.Where(d => !d.IsDelete).Count(),
+                             BankCount = p.客戶銀行資訊.Where(d => !d.IsDelete).Count()
+                         };
+
+            return View(result);
         }
 
         // GET: Data/Details/5
@@ -76,6 +143,7 @@ namespace CMSite.Controllers
         // GET: Data/Create
         public ActionResult Create()
         {
+            QueryCustomerCategoryItem();
             return View();
         }
 
@@ -84,7 +152,7 @@ namespace CMSite.Controllers
         // 詳細資訊，請參閱 https://go.microsoft.com/fwlink/?LinkId=317598。
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "Id,客戶名稱,統一編號,電話,傳真,地址,Email")] 客戶資料 客戶資料)
+        public ActionResult Create([Bind(Include = "Id,客戶名稱,統一編號,電話,傳真,地址,Email,客戶分類")] 客戶資料 客戶資料)
         {
             if (ModelState.IsValid)
             {
@@ -108,6 +176,7 @@ namespace CMSite.Controllers
             {
                 return HttpNotFound();
             }
+            QueryCustomerCategoryItem();
             return View(客戶資料);
         }
 
@@ -116,7 +185,7 @@ namespace CMSite.Controllers
         // 詳細資訊，請參閱 https://go.microsoft.com/fwlink/?LinkId=317598。
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit([Bind(Include = "Id,客戶名稱,統一編號,電話,傳真,地址,Email")] 客戶資料 客戶資料)
+        public ActionResult Edit([Bind(Include = "Id,客戶名稱,統一編號,電話,傳真,地址,Email,客戶分類")] 客戶資料 客戶資料)
         {
             if (ModelState.IsValid)
             {
@@ -148,9 +217,39 @@ namespace CMSite.Controllers
         public ActionResult DeleteConfirmed(int id)
         {
             客戶資料 客戶資料 = db.客戶資料.Find(id);
-            db.客戶資料.Remove(客戶資料);
+
+            if (客戶資料.客戶聯絡人.Any())
+            {
+                foreach (var contact in 客戶資料.客戶聯絡人)
+                {
+                    contact.IsDelete = true;
+                }
+            }
+
+            if (客戶資料.客戶銀行資訊.Any())
+            {
+                foreach (var bank in 客戶資料.客戶銀行資訊)
+                {
+                    bank.IsDelete = true;
+                }
+            }
+
+            客戶資料.IsDelete = true;
+
             db.SaveChanges();
             return RedirectToAction("Index");
+        }
+
+        private void QueryCustomerCategoryItem()
+        {
+            ViewBag.CategoryList = from c in db.Control
+                                   where c.TypeNo == "Category"
+                                   orderby c.KeyNo
+                                   select new SelectListItem
+                                   {
+                                       Text = c.Value,
+                                       Value = c.KeyNo
+                                   };
         }
 
         protected override void Dispose(bool disposing)

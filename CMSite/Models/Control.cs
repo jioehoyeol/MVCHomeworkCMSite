@@ -12,17 +12,11 @@ namespace CMSite.Models
     using System;
     using System.Collections.Generic;
     
-    public partial class 客戶聯絡人
+    public partial class Control
     {
         public int Id { get; set; }
-        public int 客戶Id { get; set; }
-        public string 職稱 { get; set; }
-        public string 姓名 { get; set; }
-        public string Email { get; set; }
-        public string 手機 { get; set; }
-        public string 電話 { get; set; }
-        public bool IsDelete { get; set; }
-    
-        public virtual 客戶資料 客戶資料 { get; set; }
+        public string TypeNo { get; set; }
+        public string KeyNo { get; set; }
+        public string Value { get; set; }
     }
 }

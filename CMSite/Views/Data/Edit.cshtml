@@ -2,6 +2,7 @@
 
 @{
     ViewBag.Title = "Edit";
+    var CategoryList = (IEnumerable<SelectListItem>)ViewBag.CategoryList;
 }
 
 <h2>Edit</h2>
@@ -24,7 +25,6 @@
                 @Html.ValidationMessageFor(model => model.客戶名稱, "", new { @class = "text-danger" })
             </div>
         </div>
-
         <div class="form-group">
             @Html.LabelFor(model => model.統一編號, htmlAttributes: new { @class = "control-label col-md-2" })
             <div class="col-md-10">
@@ -32,7 +32,6 @@
                 @Html.ValidationMessageFor(model => model.統一編號, "", new { @class = "text-danger" })
             </div>
         </div>
-
         <div class="form-group">
             @Html.LabelFor(model => model.電話, htmlAttributes: new { @class = "control-label col-md-2" })
             <div class="col-md-10">
@@ -40,7 +39,6 @@
                 @Html.ValidationMessageFor(model => model.電話, "", new { @class = "text-danger" })
             </div>
         </div>
-
         <div class="form-group">
             @Html.LabelFor(model => model.傳真, htmlAttributes: new { @class = "control-label col-md-2" })
             <div class="col-md-10">
@@ -48,7 +46,6 @@
                 @Html.ValidationMessageFor(model => model.傳真, "", new { @class = "text-danger" })
             </div>
         </div>
-
         <div class="form-group">
             @Html.LabelFor(model => model.地址, htmlAttributes: new { @class = "control-label col-md-2" })
             <div class="col-md-10">
@@ -56,7 +53,6 @@
                 @Html.ValidationMessageFor(model => model.地址, "", new { @class = "text-danger" })
             </div>
         </div>
-
         <div class="form-group">
             @Html.LabelFor(model => model.Email, htmlAttributes: new { @class = "control-label col-md-2" })
             <div class="col-md-10">
@@ -64,7 +60,13 @@
                 @Html.ValidationMessageFor(model => model.Email, "", new { @class = "text-danger" })
             </div>
         </div>
-
+        <div class="form-group">
+            @Html.LabelFor(model => model.客戶分類, "客戶分類", htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.DropDownList("客戶分類", CategoryList, new { @class = "form-control" })
+                @Html.ValidationMessageFor(model => model.客戶分類, "", new { @class = "text-danger" })
+            </div>
+        </div>
         <div class="form-group">
             <div class="col-md-offset-2 col-md-10">
                 <input type="submit" value="Save" class="btn btn-default" />

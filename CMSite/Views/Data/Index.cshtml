@@ -1,19 +1,21 @@
-﻿@model IEnumerable<CMSite.Models.客戶資料>
+﻿@model IEnumerable<CMSite.Models.CustomerDataViewModel>
 
 @{
     ViewBag.Title = "Index";
+    var CategoryList = (IQueryable<string>)ViewBag.CategoryList;
 }
 
-<h2>客戶資料管理Index</h2>
+<h2>客戶資料管理-Index</h2>
 <form method="get">
     <div class="form-inline">
-        <select name="SearchId">
+        <select name="searchId" class="form-control">
             <option value="0">客戶名稱</option>
             <option value="1">統一編號</option>
             <option value="2">電話</option>
             <option value="3">傳真</option>
             <option value="4">地址</option>
             <option value="5">Email</option>
+            <option value="6">客戶分類</option>
         </select>
         <input type="search" name="keyword" placeholder="請輸入關鍵字" class="form-control" />
         <input type="submit" value="搜尋" class="btn btn-primary" />
@@ -21,74 +23,86 @@
 </form>
 <br />
 <p>
-    @Html.ActionLink("Create New", "Create")
+    @Html.ActionLink("Create New", "Create", null, new { @class = "btn btn-primary" })
 </p>
-<div class="table-responsive">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>
-                    @Html.ActionLink("客戶名稱", "Index", new { keyword = ViewBag.Keyword, sort = ViewBag.NameOrder })
-                </th>
-                <th>
-                    @Html.DisplayNameFor(model => model.統一編號)
-                </th>
-                <th>
-                    @Html.DisplayNameFor(model => model.電話)
-                </th>
-                <th>
-                    @Html.DisplayNameFor(model => model.傳真)
-                </th>
-                <th>
-                    @Html.DisplayNameFor(model => model.地址)
-                </th>
-                <th>
-                    @Html.DisplayNameFor(model => model.Email)
-                </th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model)
+<table class="table">
+    <tr>
+        @foreach (var prop in Model.FirstOrDefault().GetType().GetProperties().Where(p => p.CustomAttributes.Any()))
+        {
+            string displayName = string.Empty;
+
+            if (prop.CustomAttributes.Any(c => c.AttributeType.Name.Equals("DisplayAttribute")))
             {
-                <tr>
-                    <td>
-                        @Html.DisplayFor(modelItem => item.客戶名稱)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelItem => item.統一編號)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelItem => item.電話)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelItem => item.傳真)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelItem => item.地址)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelItem => item.Email)
-                    </td>
-                    <td>
-                        <div class="form-inline">
-                            <div>
-                                @Html.ActionLink("編輯", "Edit", new { id = item.Id }, new { @class = "btn btn-warning" })
-                            </div>
-                            <div>
-                                @Html.ActionLink("明細", "Details", new { id = item.Id }, new { @class = "btn btn-info" })
-                            </div>
-                            <div>
-                                @using (Html.BeginForm("Delete", "Data", new { id = item.Id }, FormMethod.Post))
-                                {
-                                    @Html.AntiForgeryToken()
-                                    <input type="submit" value="刪除" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this?');" />
-                                }
-                            </div>
-                        </div>
-                    </td>
-                </tr>
+                displayName = prop.CustomAttributes.Where(c => c.AttributeType.Name.Equals("DisplayAttribute")).FirstOrDefault().NamedArguments[0].TypedValue.Value.ToString();
             }
-        </tbody>
-    </table>
-</div>
+            else
+            {
+                displayName = prop.Name;
+            }
+
+            <th>
+                @Html.ActionLink(displayName, "Index", new { searchId = ViewBag.SearchId, keyword = ViewBag.Keyword, sort = true, orderby = prop.Name, descYn = ViewBag.DescYn })
+                @if (prop.Name == "Category")
+                {
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                @Html.ActionLink("取消篩選", "Index", new { searchId = "", keyword = "", orderby = ViewBag.OrderBy, desc = ViewBag.DescYn })
+                            </li>
+                            @foreach (string item in CategoryList)
+                            {
+                                <li>
+                                    @Html.ActionLink(item, "Index", new { searchId = "6", keyword = item, orderby = ViewBag.OrderBy, desc = ViewBag.DescYn })
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </th>
+        }
+        <th></th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.CustomerName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.TaxNumber)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Telephone)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Fax)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Address)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Email)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Category)
+            </td>
+            <td>
+                <div class="form-inline">
+                    @Html.ActionLink("編輯", "Edit", new { id = item.Id }, new { @class = "btn btn-warning" })
+                    @Html.ActionLink("明細", "Details", new { id = item.Id }, new { @class = "btn btn-info" })
+                    <div class="form-group">
+                        @using (Html.BeginForm("Delete", "Data", new { id = item.Id }, FormMethod.Post))
+                        {
+                            @Html.AntiForgeryToken()
+                            <input type="submit" value="刪除" class="btn btn-danger" onclick="return confirm('你確定將此筆與其關聯的資料都刪除嗎？');" />
+                        }
+                    </div>
+                </div>
+            </td>
+        </tr>
+    }
+</table>

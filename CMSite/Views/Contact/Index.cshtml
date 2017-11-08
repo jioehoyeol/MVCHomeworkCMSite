@@ -2,6 +2,7 @@
 
 @{
     ViewBag.Title = "Index";
+    var JobTitleList = (IQueryable<string>)ViewBag.JobTitleList;
 }
 
 <h2>客戶聯絡人管理-Index</h2>
@@ -18,22 +19,38 @@
 <table class="table">
     <tr>
         <th>
-            @Html.DisplayNameFor(model => model.職稱)
+            @Html.ActionLink("職稱", "Index", new { keyword = ViewBag.Keyword, jobtitle = ViewBag.JobTitle, sort = true, orderby = "職稱", descYn = ViewBag.DescYn })
+            <div class="btn-group">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        @Html.ActionLink("取消篩選", "Index", new { keyword = "", jobtitle = "", orderby = ViewBag.OrderBy, desc = ViewBag.DescYn })
+                    </li>
+                    @foreach (string item in JobTitleList)
+                    {
+                        <li>
+                            @Html.ActionLink(item, "Index", new { keyword = ViewBag.Keyword, jobtitle = item, orderby = ViewBag.OrderBy, descYn = ViewBag.DescYn })
+                        </li>
+                    }
+                </ul>
+            </div>
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.姓名)
+            @Html.ActionLink("姓名", "Index", new { keyword = ViewBag.Keyword, jobtitle = ViewBag.JobTitle, sort = true, orderby = "姓名", descYn = ViewBag.DescYn })
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.Email)
+            @Html.ActionLink("Email", "Index", new { keyword = ViewBag.Keyword, jobtitle = ViewBag.JobTitle, sort = true, orderby = "Email", descYn = ViewBag.DescYn })
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.手機)
+            @Html.ActionLink("手機", "Index", new { keyword = ViewBag.Keyword, jobtitle = ViewBag.JobTitle, sort = true, orderby = "手機", descYn = ViewBag.DescYn })
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.電話)
+            @Html.ActionLink("電話", "Index", new { keyword = ViewBag.Keyword, jobtitle = ViewBag.JobTitle, sort = true, orderby = "電話", descYn = ViewBag.DescYn })
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.客戶資料.客戶名稱)
+            @Html.ActionLink("客戶名稱", "Index", new { keyword = ViewBag.Keyword, jobtitle = ViewBag.JobTitle, sort = true, orderby = "客戶名稱", descYn = ViewBag.DescYn })
         </th>
         <th></th>
     </tr>
