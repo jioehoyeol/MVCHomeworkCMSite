@@ -30,5 +30,6 @@ namespace CMSite.Models
 
         [Display(Name = "客戶分類")]
         public string Category { get; set; }
+
     }
 }

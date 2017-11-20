@@ -1,109 +1,124 @@
-﻿using CMSite.Models;
+﻿using ClosedXML.Excel;
+using CMSite.Data;
+using CMSite.Models;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
+using System.IO;
 using System.Linq;
 using System.Linq.Dynamic;
 using System.Net;
+using System.Reflection;
 using System.Web.Mvc;
+using CMSite.Extension;
+using CMSite.ActionFilter;
+using System;
 
 namespace CMSite.Controllers
 {
-    public class DataController : Controller
+    public class DataController : BaseController
     {
-        private CustomerEntities db = new CustomerEntities();
-
-        // GET: Data
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="searchId"></param>
-        /// <param name="keyword"></param>
-        /// <param name="sort"></param>
-        /// <param name="orderby"></param>
-        /// <param name="descYn"></param>
-        /// <returns></returns>
-        public ActionResult Index(string searchId, string keyword, bool? sort, string orderby, string descYn)
+        // GET: Data/Index
+        public ActionResult Index(CustomerDataSearchModel searchData)
         {
+            #region 排序資料升冪/降冪判斷
+            if (!string.IsNullOrEmpty(searchData.SortColumn))
+            {
+                if (searchData.IsSort)
+                {
+                    if (searchData.CurrentSortColumn.Equals(searchData.SortColumn))
+                    {
+                        searchData.SortDirection = searchData.SortDirection.Equals("asc") ? "desc" : "asc";
+                    }
+                    else
+                    {
+                        searchData.CurrentSortColumn = searchData.SortColumn;
+                        searchData.SortDirection = "asc";
+                    }
+                    searchData.IsSort = false;
+                }
+            }
+            else
+            {
+                searchData.CurrentSortColumn = "CustomerName";
+                searchData.SortColumn = "CustomerName";
+                searchData.SortDirection = "asc";
+            }
+            #endregion
+
+            //取得關鍵字查詢下拉選單
+            ViewBag.KeywordKindList = SelectListItemDataDAO.QueryKeywordKindList();
+
             //組合客戶資料
-            var result = from d in db.客戶資料
-                         join c in db.Control
-                            on new { p1 = "Category", p2 = d.客戶分類 }
-                            equals new { p1 = c.TypeNo, p2 = c.KeyNo } into cd
-                         from c in cd.DefaultIfEmpty()
-                         where d.IsDelete == false
-                         select new CustomerDataViewModel
-                         {
-                             Id = d.Id,
-                             CustomerName = d.客戶名稱,
-                             TaxNumber = d.統一編號,
-                             Telephone = d.電話,
-                             Fax = d.傳真,
-                             Address = d.地址,
-                             Email = d.Email,
-                             Category = c.Value
-                         };
+            CustomerDataDAO dao = new CustomerDataDAO();
+            searchData.DataModel = dao.QueryData(searchData);
 
-            //取得客戶分類可用的篩選選項
-            ViewBag.CategoryList = result.Select(r => r.Category).Distinct();
+            return View(searchData);
+        }
 
-            #region 篩選資料
-            if (!string.IsNullOrEmpty(keyword))
-            {
-                switch (searchId)
-                {
-                    case "0":
-                        result = result.Where(e => e.CustomerName.Contains(keyword));
-                        break;
-                    case "1":
-                        result = result.Where(e => e.TaxNumber.Contains(keyword));
-                        break;
-                    case "2":
-                        result = result.Where(e => e.Telephone.Contains(keyword));
-                        break;
-                    case "3":
-                        result = result.Where(e => e.Fax.Contains(keyword));
-                        break;
-                    case "4":
-                        result = result.Where(e => e.Address.Contains(keyword));
-                        break;
-                    case "5":
-                        result = result.Where(e => e.Email.Contains(keyword));
-                        break;
-                    case "6":
-                        result = result.Where(e => e.Category.Contains(keyword));
-                        break;
-                    default:
-                        break;
-                }
-            }
+        // GET: Data/Export
+        public ActionResult Export(CustomerDataSearchModel searchData)
+        {
+            //取資料(轉為DataTable)
+            CustomerDataDAO dao = new CustomerDataDAO();
+            var result = dao.QueryData(searchData).ToDataTable();
+
+            //轉成Excel
+            var workbook = new XLWorkbook();
+            workbook.Worksheets.Add(result, "CustomerData");
+
+            #region 寫法二(已註解)
+            //var sheet = workbook.Worksheets.Add("CustomerData");
+            //int columnIndex = 1;
+            //int rowIndex = 1;
+            ////標題列
+            //string[] titleList = new string[] { "Id", "客戶名稱", "統一編號", "電話", "傳真", "地址", "Email", "客戶分類" };
+            //foreach (var title in titleList)
+            //{
+            //    sheet.Cell(rowIndex, columnIndex).Value = title;
+            //    columnIndex++;
+            //}
+            ////內容列
+            //rowIndex = 2;
+            //foreach (var data in result)
+            //{
+            //    sheet.Cell(rowIndex, 1).Value = data.Id;
+            //    sheet.Cell(rowIndex, 2).Value = data.CustomerName;
+            //    sheet.Cell(rowIndex, 3).Value = data.TaxNumber;
+            //    sheet.Cell(rowIndex, 4).Value = data.Telephone;
+            //    sheet.Cell(rowIndex, 5).Value = data.Fax;
+            //    sheet.Cell(rowIndex, 6).Value = data.Address;
+            //    sheet.Cell(rowIndex, 7).Value = data.Email;
+            //    sheet.Cell(rowIndex, 8).Value = data.Category;
+            //    rowIndex++;
+            //}
+
+            //foreach (IXLColumn col in sheet.Columns())
+            //{
+            //    col.AdjustToContents();
+            //}
             #endregion
 
-            #region 排序資料
-            if (sort != null && sort.Value)
-            {
-                descYn = descYn == "Y" ? "N" : "Y";
-            }
-            if (!string.IsNullOrEmpty(descYn))
-            {
-                if (descYn.Equals("Y"))
-                {
-                    result = result.OrderBy(orderby + " DESC");
-                }
-                else
-                {
-                    result = result.OrderBy(orderby);
-                }
-            }
+            MemoryStream exportStream = new MemoryStream();
+            workbook.SaveAs(exportStream);
+            workbook.Dispose();
 
-            #endregion
+            exportStream.Seek(0, SeekOrigin.Begin);
+            return File(exportStream,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        "CustomerData.xlsx");
+        }
 
-            ViewBag.DescYn = descYn;
-            ViewBag.OrderBy = orderby;
-            ViewBag.Keyword = keyword;
-            ViewBag.SearchId = searchId;
-
-            return View(result);
+        // GET: Data/GEtCustomerType
+        /// <summary>
+        /// 取得可篩選選項列表
+        /// </summary>
+        /// <returns></returns>
+        public ActionResult GetCustomerType()
+        {
+            SelectListItemDataDAO dao = new SelectListItemDataDAO();
+            var result = dao.QueryCustomerCategoryList().Select(s => s.Text);
+            return Json(result, JsonRequestBehavior.AllowGet);
         }
 
         // GET: Data/Statistics
@@ -113,15 +128,8 @@ namespace CMSite.Controllers
         /// <returns></returns>
         public ActionResult Statistics()
         {
-            var result = from p in db.客戶資料
-                         select new CustomerStatisticViewModel
-                         {
-                             Id = p.Id,
-                             CustomerName = p.客戶名稱,
-                             ContactCount = p.客戶聯絡人.Where(d => !d.IsDelete).Count(),
-                             BankCount = p.客戶銀行資訊.Where(d => !d.IsDelete).Count()
-                         };
-
+            CustomerDataDAO dao = new CustomerDataDAO();
+            var result = dao.QueryStatisticData();
             return View(result);
         }
 
@@ -141,9 +149,9 @@ namespace CMSite.Controllers
         }
 
         // GET: Data/Create
+        [CustomerCategoryDropDownList]
         public ActionResult Create()
         {
-            QueryCustomerCategoryItem();
             return View();
         }
 
@@ -152,6 +160,7 @@ namespace CMSite.Controllers
         // 詳細資訊，請參閱 https://go.microsoft.com/fwlink/?LinkId=317598。
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [CustomerCategoryDropDownList]
         public ActionResult Create([Bind(Include = "Id,客戶名稱,統一編號,電話,傳真,地址,Email,客戶分類")] 客戶資料 客戶資料)
         {
             if (ModelState.IsValid)
@@ -165,6 +174,7 @@ namespace CMSite.Controllers
         }
 
         // GET: Data/Edit/5
+        [CustomerCategoryDropDownList]
         public ActionResult Edit(int? id)
         {
             if (id == null)
@@ -176,7 +186,7 @@ namespace CMSite.Controllers
             {
                 return HttpNotFound();
             }
-            QueryCustomerCategoryItem();
+
             return View(客戶資料);
         }
 
@@ -185,6 +195,7 @@ namespace CMSite.Controllers
         // 詳細資訊，請參閱 https://go.microsoft.com/fwlink/?LinkId=317598。
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [CustomerCategoryDropDownList]
         public ActionResult Edit([Bind(Include = "Id,客戶名稱,統一編號,電話,傳真,地址,Email,客戶分類")] 客戶資料 客戶資料)
         {
             if (ModelState.IsValid)
@@ -193,6 +204,7 @@ namespace CMSite.Controllers
                 db.SaveChanges();
                 return RedirectToAction("Index");
             }
+
             return View(客戶資料);
         }
 
@@ -216,8 +228,14 @@ namespace CMSite.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult DeleteConfirmed(int id)
         {
+            #region 取得要刪除的客戶資料
             客戶資料 客戶資料 = db.客戶資料.Find(id);
-
+            if (客戶資料 == null)
+            {
+                return HttpNotFound();
+            }
+            #endregion
+            #region 判斷是否有聯絡人，若有則刪除
             if (客戶資料.客戶聯絡人.Any())
             {
                 foreach (var contact in 客戶資料.客戶聯絡人)
@@ -225,7 +243,8 @@ namespace CMSite.Controllers
                     contact.IsDelete = true;
                 }
             }
-
+            #endregion
+            #region 判斷是否有銀行資訊，若有則刪除
             if (客戶資料.客戶銀行資訊.Any())
             {
                 foreach (var bank in 客戶資料.客戶銀行資訊)
@@ -233,23 +252,20 @@ namespace CMSite.Controllers
                     bank.IsDelete = true;
                 }
             }
+            #endregion
 
             客戶資料.IsDelete = true;
 
-            db.SaveChanges();
-            return RedirectToAction("Index");
-        }
+            try
+            {
+                db.SaveChanges();
+            }
+            catch(Exception ex)
+            {
+                throw ex;
+            }
 
-        private void QueryCustomerCategoryItem()
-        {
-            ViewBag.CategoryList = from c in db.Control
-                                   where c.TypeNo == "Category"
-                                   orderby c.KeyNo
-                                   select new SelectListItem
-                                   {
-                                       Text = c.Value,
-                                       Value = c.KeyNo
-                                   };
+            return RedirectToAction("Index");
         }
 
         protected override void Dispose(bool disposing)

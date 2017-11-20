@@ -89,7 +89,8 @@ namespace CMSite.Controllers
         // GET: Contact/Create
         public ActionResult Create()
         {
-            ViewBag.客戶Id = new SelectList(db.客戶資料, "Id", "客戶名稱");
+            var data = db.客戶資料.Where(w => w.IsDelete == false);
+            ViewBag.客戶Id = new SelectList(data, "Id", "客戶名稱");
             return View();
         }
 
@@ -102,16 +103,9 @@ namespace CMSite.Controllers
         {
             if (ModelState.IsValid)
             {
-                if (!CheckEmailDuplicate(客戶聯絡人.Id, 客戶聯絡人.客戶Id, 客戶聯絡人.Email))
-                {
-                    db.客戶聯絡人.Add(客戶聯絡人);
-                    db.SaveChanges();
-                    return RedirectToAction("Index");
-                }
-                else
-                {
-                    ModelState.AddModelError("Email", "輸入的 Email 已存在，請重新輸入！");
-                }
+                db.客戶聯絡人.Add(客戶聯絡人);
+                db.SaveChanges();
+                return RedirectToAction("Index");
             }
 
             ViewBag.客戶Id = new SelectList(db.客戶資料, "Id", "客戶名稱", 客戶聯絡人.客戶Id);
@@ -143,16 +137,9 @@ namespace CMSite.Controllers
         {
             if (ModelState.IsValid)
             {
-                if (!CheckEmailDuplicate(客戶聯絡人.Id, 客戶聯絡人.客戶Id, 客戶聯絡人.Email))
-                {
-                    db.Entry(客戶聯絡人).State = EntityState.Modified;
-                    db.SaveChanges();
-                    return RedirectToAction("Index");
-                }
-                else
-                {
-                    ModelState.AddModelError("Email", "輸入的 Email 已存在，請重新輸入！");
-                }
+                db.Entry(客戶聯絡人).State = EntityState.Modified;
+                db.SaveChanges();
+                return RedirectToAction("Index");
             }
             ViewBag.客戶Id = new SelectList(db.客戶資料, "Id", "客戶名稱", 客戶聯絡人.客戶Id);
             return View(客戶聯絡人);
@@ -183,19 +170,6 @@ namespace CMSite.Controllers
             客戶聯絡人.IsDelete = true;
             db.SaveChanges();
             return RedirectToAction("Index");
-        }
-
-
-        private bool CheckEmailDuplicate(int Id, int 客戶Id, string Email)
-        {
-            if (Id > 0)
-            {
-                return db.客戶聯絡人.Any(o => o.Id != Id && o.客戶Id == 客戶Id && o.Email == Email);
-            }
-            else
-            {
-                return db.客戶聯絡人.Any(o => o.客戶Id == 客戶Id && o.Email == Email);
-            }
         }
 
         protected override void Dispose(bool disposing)

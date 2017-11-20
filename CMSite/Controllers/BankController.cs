@@ -7,6 +7,9 @@ using System.Net;
 using System.Web;
 using System.Web.Mvc;
 using CMSite.Models;
+using CMSite.Extension;
+using ClosedXML.Excel;
+using System.IO;
 
 namespace CMSite.Controllers
 {
@@ -26,9 +29,40 @@ namespace CMSite.Controllers
                 result = result.Where(bank => bank.帳戶名稱.Contains(keyword)
                                            || bank.銀行名稱.Contains(keyword)
                                            || bank.客戶資料.客戶名稱.Contains(keyword));
-            }
 
+            }
+            ViewBag.keyword = keyword;
             return View(result.ToList());
+        }
+
+        public ActionResult Export(string keyword)
+        {
+            #region 取資料
+            var result = from b in db.客戶銀行資訊
+                         where b.IsDelete == false
+                         select b;
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                result = result.Where(bank => bank.帳戶名稱.Contains(keyword)
+                                           || bank.銀行名稱.Contains(keyword)
+                                           || bank.客戶資料.客戶名稱.Contains(keyword));
+
+            }
+            #endregion
+
+            //轉成Excel
+            var workbook = new XLWorkbook();
+            workbook.Worksheets.Add(result.ToDataTable(), "CustomerBank");
+
+            MemoryStream exportStream = new MemoryStream();
+            workbook.SaveAs(exportStream);
+            workbook.Dispose();
+
+            exportStream.Seek(0, SeekOrigin.Begin);
+            return File(exportStream,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        "CustomerBank.xlsx");
         }
 
         // GET: Bank/Details/5
@@ -49,7 +83,7 @@ namespace CMSite.Controllers
         // GET: Bank/Create
         public ActionResult Create()
         {
-            ViewBag.客戶Id = new SelectList(db.客戶資料, "Id", "客戶名稱");
+            ViewBag.客戶Id = new SelectList(db.客戶資料.Where(w => w.IsDelete == false), "Id", "客戶名稱");
             return View();
         }
 
@@ -83,6 +117,7 @@ namespace CMSite.Controllers
             {
                 return HttpNotFound();
             }
+
             ViewBag.客戶Id = new SelectList(db.客戶資料, "Id", "客戶名稱", 客戶銀行資訊.客戶Id);
             return View(客戶銀行資訊);
         }

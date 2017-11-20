@@ -1,72 +1,90 @@
-﻿@model IEnumerable<CMSite.Models.CustomerDataViewModel>
+﻿@model CMSite.Models.CustomerDataSearchModel
 
 @{
     ViewBag.Title = "Index";
-    var CategoryList = (IQueryable<string>)ViewBag.CategoryList;
+    var KeywordKindList = (IEnumerable<SelectListItem>)ViewBag.KeywordKindList;
 }
-
-<h2>客戶資料管理-Index</h2>
-<form method="get">
+<h2 class="text-success">客戶資料管理-Index</h2>
+@using (Html.BeginForm("Index", "Data", FormMethod.Get))
+{
     <div class="form-inline">
-        <select name="searchId" class="form-control">
-            <option value="0">客戶名稱</option>
-            <option value="1">統一編號</option>
-            <option value="2">電話</option>
-            <option value="3">傳真</option>
-            <option value="4">地址</option>
-            <option value="5">Email</option>
-            <option value="6">客戶分類</option>
-        </select>
-        <input type="search" name="keyword" placeholder="請輸入關鍵字" class="form-control" />
-        <input type="submit" value="搜尋" class="btn btn-primary" />
+        @Html.DropDownListFor(model => model.KeywordKind, KeywordKindList, new { id = "ddlKeywordKind", @class = "form-control" })
+        @Html.TextBoxFor(model => model.Keyword, new { placeholder = "請輸入關鍵字", id = "txtKeyword", @class = "form-control" })
+        @Html.HiddenFor(model => model.CustomerTypeFilter, new { id = "hdfCustomerTypeFilter" })
+        @Html.HiddenFor(model => model.IsSort, new { id="hdfIsSOrt", @Value= Model.IsSort })
+        @Html.HiddenFor(model => model.CurrentSortColumn, new { id = "hdfCurrentSortColumn", @Value = Model.CurrentSortColumn })
+        @Html.HiddenFor(model => model.SortColumn, new { id = "hdfSortColumn" })
+        @Html.HiddenFor(model => model.SortDirection, new { id = "hdfSortDirection", @Value = Model.SortDirection })
+        <button type="submit" id="btnSearch" class="btn btn-primary">
+            <span class="glyphicon glyphicon-search"></span>
+            <span>搜尋</span>
+        </button>
+        @Html.ActionLink("匯出表格", "Export",
+                         new
+                         {
+                             KeywordKind = Model.KeywordKind,
+                             Keyword = Model.Keyword,
+                             CustomerTypeFilter = Model.CustomerTypeFilter,
+                             CurrentSortColumn = Model.CurrentSortColumn,
+                             SortColumn = Model.SortColumn,
+                             SortDirection = Model.SortDirection
+                         },
+                         new { @Class = "btn btn-info right" })
     </div>
-</form>
+}
 <br />
 <p>
     @Html.ActionLink("Create New", "Create", null, new { @class = "btn btn-primary" })
 </p>
 <table class="table">
     <tr>
-        @foreach (var prop in Model.FirstOrDefault().GetType().GetProperties().Where(p => p.CustomAttributes.Any()))
-        {
-            string displayName = string.Empty;
-
-            if (prop.CustomAttributes.Any(c => c.AttributeType.Name.Equals("DisplayAttribute")))
-            {
-                displayName = prop.CustomAttributes.Where(c => c.AttributeType.Name.Equals("DisplayAttribute")).FirstOrDefault().NamedArguments[0].TypedValue.Value.ToString();
-            }
-            else
-            {
-                displayName = prop.Name;
-            }
-
-            <th>
-                @Html.ActionLink(displayName, "Index", new { searchId = ViewBag.SearchId, keyword = ViewBag.Keyword, sort = true, orderby = prop.Name, descYn = ViewBag.DescYn })
-                @if (prop.Name == "Category")
-                {
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li>
-                                @Html.ActionLink("取消篩選", "Index", new { searchId = "", keyword = "", orderby = ViewBag.OrderBy, desc = ViewBag.DescYn })
-                            </li>
-                            @foreach (string item in CategoryList)
-                            {
-                                <li>
-                                    @Html.ActionLink(item, "Index", new { searchId = "6", keyword = item, orderby = ViewBag.OrderBy, desc = ViewBag.DescYn })
-                                </li>
-                            }
-                        </ul>
-                    </div>
-                }
-            </th>
-        }
-        <th></th>
+        <th>
+            <a href="#" onclick="SortColumn('@Html.NameFor(o=>o.DataModel.First().CustomerName)');">
+                @Html.DisplayNameFor(model => model.DataModel.First().CustomerName)
+            </a>
+        </th>
+        <th>
+            <a href="#" onclick="SortColumn('@Html.NameFor(o=>o.DataModel.First().TaxNumber)');">
+                @Html.DisplayNameFor(model => model.DataModel.First().TaxNumber)
+            </a>
+        </th>
+        <th>
+            <a href="#" onclick="SortColumn('@Html.NameFor(o=>o.DataModel.First().Telephone)');">
+                @Html.DisplayNameFor(model => model.DataModel.First().Telephone)
+            </a>
+        </th>
+        <th>
+            <a href="#" onclick="SortColumn('@Html.NameFor(o=>o.DataModel.First().Fax)');">
+                @Html.DisplayNameFor(model => model.DataModel.First().Fax)
+            </a>
+        </th>
+        <th>
+            <a href="#" onclick="SortColumn('@Html.NameFor(o=>o.DataModel.First().Address)');">
+                @Html.DisplayNameFor(model => model.DataModel.First().Address)
+            </a>
+        </th>
+        <th>
+            <a href="#" onclick="SortColumn('@Html.NameFor(o=>o.DataModel.First().Email)');">
+                @Html.DisplayNameFor(model => model.DataModel.First().Email)
+            </a>
+        </th>
+        <th>
+            <a href="#" onclick="SortColumn('@Html.NameFor(o=>o.DataModel.First().Category)');">
+                @Html.DisplayNameFor(model => model.DataModel.First().Category)
+            </a>
+            <div class="btn-group">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <span class="caret"></span>
+                </button>
+                <ul id="ulCustomerTypeFilter" class="dropdown-menu"></ul>
+            </div>
+        </th>
+        <th>
+            @Html.AntiForgeryToken()
+        </th>
     </tr>
 
-    @foreach (var item in Model)
+    @foreach (var item in Model.DataModel)
     {
         <tr>
             <td>
@@ -94,15 +112,68 @@
                 <div class="form-inline">
                     @Html.ActionLink("編輯", "Edit", new { id = item.Id }, new { @class = "btn btn-warning" })
                     @Html.ActionLink("明細", "Details", new { id = item.Id }, new { @class = "btn btn-info" })
-                    <div class="form-group">
-                        @using (Html.BeginForm("Delete", "Data", new { id = item.Id }, FormMethod.Post))
-                        {
-                            @Html.AntiForgeryToken()
-                            <input type="submit" value="刪除" class="btn btn-danger" onclick="return confirm('你確定將此筆與其關聯的資料都刪除嗎？');" />
-                        }
-                    </div>
+                    <button type="button" class="deleteBtn btn btn-danger" data-id="@item.Id">刪除</button>
                 </div>
             </td>
         </tr>
     }
 </table>
+
+
+@section Scripts{
+    <script type="text/javascript">
+        $(function () {
+            QueryCustomerType();
+
+            $(".deleteBtn").click(function () {
+                if (confirm("你確定將此筆與其關聯的資料都刪除嗎？"))
+                {
+                    var dataId = $(this).attr("data-id");
+                    var token = $("input[name='__RequestVerificationToken']").val();
+                    $.ajax({
+                        method: "POST",
+                        url: "@Url.Action("Delete", "Data")",
+                        data: { id: dataId, __RequestVerificationToken: token },
+                        success: function (data, textStatus, jqXHR) {
+                            $("#btnSearch").click();
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            alert("Request failed: [" + textStatus + "] " + errorThrown);
+                        }
+                    });
+                }
+            });
+        });
+
+        function QueryCustomerType()
+        {
+            var getDataAPI = "@Url.Action("GetCustomerType", "Data")";
+            $.getJSON(getDataAPI, function (data) {
+                var items = [];
+                items.push("<li onclick=\"FilterCustomerType('');\"><a href='#'>取消篩選</a></li>");
+                $.each(data, function (key, value) {
+                    items.push("<li onclick=\"FilterCustomerType('" + value + "');\"><a href='#'>" + value + "</a></li>");
+                });
+
+                $("#ulCustomerTypeFilter").html(items.join(""));
+            })
+            .fail(function () {
+                alert("error");
+            });
+        }
+
+        function SortColumn(sortColumn) {
+            $("#hdfSortColumn").val(sortColumn);
+            $("#hdfIsSOrt").val(true);
+            $("#btnSearch").click();
+        }
+
+        function FilterCustomerType(customerType) {
+            $("#hdfCustomerTypeFilter").val(customerType);
+            $("#btnSearch").click();
+        }
+
+    </script>
+}
+
+
