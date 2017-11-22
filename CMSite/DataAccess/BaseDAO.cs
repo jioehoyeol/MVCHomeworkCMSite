@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 
-namespace CMSite.Data
+namespace CMSite.DataAccess
 {
     public class BaseDAO
     {

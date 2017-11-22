@@ -9,29 +9,70 @@ namespace CMSite.Extension
 {
     public static class MyClassExtension
     {
+        /// <summary>
+        /// Convert a IEnumerable{T} to a DataTable.
+        /// </summary>
         public static DataTable ToDataTable<T>(this IEnumerable<T> items)
         {
             var tb = new DataTable(typeof(T).Name);
 
             PropertyInfo[] props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
-            foreach (var prop in props)
+            foreach (PropertyInfo prop in props)
             {
-                tb.Columns.Add(prop.Name, prop.PropertyType);
+                Type t = GetCoreType(prop.PropertyType);
+                tb.Columns.Add(prop.Name, t);
             }
 
-            foreach (var item in items)
+            DataRow dr = null;
+            PropertyInfo pInfo = null;
+            foreach (T item in items)
             {
-                var values = new object[props.Length];
-                for (var i = 0; i < props.Length; i++)
+                dr = tb.NewRow();
+
+                foreach(DataColumn col in dr.Table.Columns)
                 {
-                    values[i] = props[i].GetValue(item, null);
+                    pInfo = props.Where(p => p.Name == col.ColumnName).FirstOrDefault();
+                    if(pInfo != null)
+                    {
+                        dr[col] = pInfo.GetValue(item);
+                    }
                 }
 
-                tb.Rows.Add(values);
+                tb.Rows.Add(dr);
             }
 
             return tb;
+        }
+
+        /// <summary>
+        /// Determine of specified type is nullable
+        /// </summary>
+        private static bool IsNullable(Type t)
+        {
+            return !t.IsValueType || (t.IsGenericType && t.GetGenericTypeDefinition() == typeof(Nullable<>));
+        }
+
+        /// <summary>
+        /// Return underlying type if type is Nullable otherwise return the type
+        /// </summary>
+        private static Type GetCoreType(Type t)
+        {
+            if (t != null && IsNullable(t))
+            {
+                if (!t.IsValueType)
+                {
+                    return t;
+                }
+                else
+                {
+                    return Nullable.GetUnderlyingType(t);
+                }
+            }
+            else
+            {
+                return t;
+            }
         }
     }
 }

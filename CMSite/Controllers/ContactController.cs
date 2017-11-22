@@ -8,67 +8,37 @@ using System.Net;
 using System.Web;
 using System.Web.Mvc;
 using CMSite.Models;
+using CMSite.Models.SearchModel;
+using CMSite.DataAccess;
+using CMSite.Extension;
 
 namespace CMSite.Controllers
 {
-    public class ContactController : Controller
+    public class ContactController : BaseController
     {
-        private CustomerEntities db = new CustomerEntities();
-
         // GET: Contact
-        public ActionResult Index(string keyword, string jobtitle, bool? sort, string orderby, string descYn)
+        public ActionResult Index(CustomerContactSearchModel search)
         {
-            IQueryable<Models.客戶聯絡人> result = db.客戶聯絡人.Where(d => d.IsDelete == false);
+            //排序初始設定
+            ModelSort("客戶名稱", search);
 
-            ViewBag.JobTitleList = result.Select(r => r.職稱).Distinct();
+            //取得資料
+            CustomerContactDAO dao = new CustomerContactDAO();
+            search.DataModel = dao.QueryData(search);
+            
+            //設定篩選選單
+            ViewBag.JobTitleList = dao.QueryJobTitleList();
 
-            if (!string.IsNullOrEmpty(keyword))
-            {
-                result = result.Where(o => o.姓名.Contains(keyword));
-            }
+            return View(search);
+        }
+        
+        // GET: Contact/Export
+        public ActionResult Export(CustomerContactSearchModel search)
+        {
+            CustomerContactDAO dao = new CustomerContactDAO();
+            var result = dao.QueryData(search).ToDataTable();
 
-            if (!string.IsNullOrEmpty(jobtitle))
-            {
-                result = result.Where(o => o.職稱 == jobtitle);
-            }
-
-            if (sort != null && sort.Value)
-            {
-                descYn = descYn == "Y" ? "N" : "Y";
-            }
-
-
-            if (!string.IsNullOrEmpty(descYn) && !string.IsNullOrEmpty(orderby))
-            {
-                if (descYn.Equals("Y"))
-                {
-                    if (orderby.Equals("客戶名稱"))
-                    {
-                        result = result.OrderByDescending(o => o.客戶資料.客戶名稱);
-                    }
-                    else
-                    {
-                        result = result.OrderBy(orderby + " DESC");
-                    }
-                }
-                else
-                {
-                    if (orderby.Equals("客戶名稱"))
-                    {
-                        result = result.OrderBy(o => o.客戶資料.客戶名稱);
-                    }
-                    else
-                    {
-                        result = result.OrderBy(orderby);
-                    }
-                }
-            }
-            ViewBag.Keyword = keyword;
-            ViewBag.JobTitle = jobtitle;
-            ViewBag.OrderBy = orderby;
-            ViewBag.DescYn = descYn;
-
-            return View(result);
+            return ExportExcel(result, "CustomerContact");
         }
 
         // GET: Contact/Details/5
@@ -119,13 +89,13 @@ namespace CMSite.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            客戶聯絡人 客戶聯絡人 = db.客戶聯絡人.Find(id);
-            if (客戶聯絡人 == null)
+            客戶聯絡人 contact = db.客戶聯絡人.Find(id);
+            if (contact == null)
             {
                 return HttpNotFound();
             }
-            ViewBag.客戶Id = new SelectList(db.客戶資料, "Id", "客戶名稱", 客戶聯絡人.客戶Id);
-            return View(客戶聯絡人);
+            ViewBag.客戶Id = new SelectList(db.客戶資料, "Id", "客戶名稱", contact.客戶Id);
+            return View(contact);
         }
 
         // POST: Contact/Edit/5

@@ -1,4 +1,4 @@
-﻿@model CMSite.Models.CustomerDataSearchModel
+﻿@model CMSite.Models.SearchModel.CustomerDataSearchModel
 
 @{
     ViewBag.Title = "Index";
@@ -11,7 +11,7 @@
         @Html.DropDownListFor(model => model.KeywordKind, KeywordKindList, new { id = "ddlKeywordKind", @class = "form-control" })
         @Html.TextBoxFor(model => model.Keyword, new { placeholder = "請輸入關鍵字", id = "txtKeyword", @class = "form-control" })
         @Html.HiddenFor(model => model.CustomerTypeFilter, new { id = "hdfCustomerTypeFilter" })
-        @Html.HiddenFor(model => model.IsSort, new { id="hdfIsSOrt", @Value= Model.IsSort })
+        @Html.HiddenFor(model => model.IsSort, new { id = "hdfIsSOrt", @Value = Model.IsSort })
         @Html.HiddenFor(model => model.CurrentSortColumn, new { id = "hdfCurrentSortColumn", @Value = Model.CurrentSortColumn })
         @Html.HiddenFor(model => model.SortColumn, new { id = "hdfSortColumn" })
         @Html.HiddenFor(model => model.SortDirection, new { id = "hdfSortDirection", @Value = Model.SortDirection })
@@ -19,22 +19,28 @@
             <span class="glyphicon glyphicon-search"></span>
             <span>搜尋</span>
         </button>
-        @Html.ActionLink("匯出表格", "Export",
-                         new
-                         {
-                             KeywordKind = Model.KeywordKind,
-                             Keyword = Model.Keyword,
-                             CustomerTypeFilter = Model.CustomerTypeFilter,
-                             CurrentSortColumn = Model.CurrentSortColumn,
-                             SortColumn = Model.SortColumn,
-                             SortDirection = Model.SortDirection
-                         },
-                         new { @Class = "btn btn-info right" })
+        <button type="button" id="btnExport" class="btn btn-info" data-action="Export">
+            <span>匯出表格</span>
+        </button>
     </div>
 }
+<div style="display: none;">
+    @Html.ActionLink("HiddenLink", "ZZZ",
+                    new
+                    {
+                        KeywordKind = Model.KeywordKind,
+                        Keyword = Model.Keyword,
+                        CustomerTypeFilter = Model.CustomerTypeFilter,
+                        CurrentSortColumn = Model.CurrentSortColumn,
+                        SortColumn = Model.SortColumn,
+                        SortDirection = Model.SortDirection
+                    }, new { id = "lnkTrigger" })
+</div>
 <br />
 <p>
-    @Html.ActionLink("Create New", "Create", null, new { @class = "btn btn-primary" })
+    <button type="button" id="btnCreate" class="btn btn-primary" data-action="Create">
+        <span>Create New</span>
+    </button>
 </p>
 <table class="table">
     <tr>
@@ -110,9 +116,9 @@
             </td>
             <td>
                 <div class="form-inline">
-                    @Html.ActionLink("編輯", "Edit", new { id = item.Id }, new { @class = "btn btn-warning" })
-                    @Html.ActionLink("明細", "Details", new { id = item.Id }, new { @class = "btn btn-info" })
-                    <button type="button" class="deleteBtn btn btn-danger" data-id="@item.Id">刪除</button>
+                    <button type="button" class="btnEdit btn btn-warning" data-id="@item.Id" data-action="Edit">編輯</button>
+                    <button type="button" class="btnDetail btn btn-info" data-id="@item.Id" data-action="Details">明細</button>
+                    <button type="button" class="btnDelete btn btn-danger" data-id="@item.Id">刪除</button>
                 </div>
             </td>
         </tr>
@@ -125,7 +131,7 @@
         $(function () {
             QueryCustomerType();
 
-            $(".deleteBtn").click(function () {
+            $(".btnDelete").click(function () {
                 if (confirm("你確定將此筆與其關聯的資料都刪除嗎？"))
                 {
                     var dataId = $(this).attr("data-id");
@@ -143,6 +149,22 @@
                     });
                 }
             });
+
+            $("#btnExport").click(function () {
+                SwitchPage($(this).attr("data-action"), "");
+            });
+
+            $("#btnCreate").click(function () {
+                SwitchPage($(this).attr("data-action"), "");
+            });
+
+            $(".btnEdit").click(function () {
+                SwitchPage($(this).attr("data-action"), $(this).attr("data-id"));
+            });
+
+            $(".btnDetail").click(function () {
+                SwitchPage($(this).attr("data-action"), $(this).attr("data-id"));
+            });
         });
 
         function QueryCustomerType()
@@ -152,7 +174,13 @@
                 var items = [];
                 items.push("<li onclick=\"FilterCustomerType('');\"><a href='#'>取消篩選</a></li>");
                 $.each(data, function (key, value) {
-                    items.push("<li onclick=\"FilterCustomerType('" + value + "');\"><a href='#'>" + value + "</a></li>");
+                    if (value == $("#hdfCustomerTypeFilter").val()) {
+                        items.push("<li class=\"active\" onclick=\"FilterCustomerType('" + value + "');\"><a href='#'>" + value + "</a></li>");
+                    }
+                    else
+                    {
+                        items.push("<li onclick=\"FilterCustomerType('" + value + "');\"><a href='#'>" + value + "</a></li>");
+                    }
                 });
 
                 $("#ulCustomerTypeFilter").html(items.join(""));
@@ -160,6 +188,16 @@
             .fail(function () {
                 alert("error");
             });
+        }
+
+        function SwitchPage(nextAction, id) {
+            var newHref = "";
+            if (id && id != "") {
+                newHref = $("#lnkTrigger").attr("href").replace("ZZZ", nextAction + "/" + id);
+            } else {
+                newHref = $("#lnkTrigger").attr("href").replace("ZZZ", nextAction);
+            }
+            window.location.href = newHref;
         }
 
         function SortColumn(sortColumn) {

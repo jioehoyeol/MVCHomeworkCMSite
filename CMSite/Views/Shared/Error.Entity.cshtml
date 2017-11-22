@@ -1,0 +1,26 @@
+﻿@model System.Web.Mvc.HandleErrorInfo
+
+
+<h1 class="text-danger">您輸入的資料錯誤，請修正後再送出一次！</h1>
+<br />
+@using System.Data.Entity.Validation
+@{
+    var ex = Model.Exception as DbEntityValidationException;
+    var allErrors = new List<string>();
+
+    foreach (DbEntityValidationResult re in ex.EntityValidationErrors)
+    {
+        foreach (DbValidationError err in re.ValidationErrors)
+        {
+            allErrors.Add(err.ErrorMessage);
+        }
+    }
+}
+<div class="well">
+    <ul>
+        @foreach (var item in allErrors)
+        {
+            <li><h3>@item</h3></li>
+        }
+    </ul> 
+</div>

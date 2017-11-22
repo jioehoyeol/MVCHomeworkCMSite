@@ -178,6 +178,8 @@
     <Compile Include="Controllers\DataController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="DataAccess\BaseDAO.cs" />
+    <Compile Include="DataAccess\CustomerBankDAO.cs" />
+    <Compile Include="DataAccess\CustomerContactDAO.cs" />
     <Compile Include="DataAccess\CustomerDataDAO.cs" />
     <Compile Include="DataAccess\SelectListItemDataDAO.cs" />
     <Compile Include="Extension\MyClassExtension.cs" />
@@ -211,7 +213,9 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>CustomerPartialClass.tt</DependentUpon>
     </Compile>
+    <Compile Include="Models\SearchModel\CustomerContactSearchModel.cs" />
     <Compile Include="Models\SearchModel\CustomerDataSearchModel.cs" />
+    <Compile Include="Models\SearchModel\SortModel.cs" />
     <Compile Include="Models\ViewModel\CustomerDataViewModel.cs" />
     <Compile Include="Models\ViewModel\CustomerStatisticViewModel.cs" />
     <Compile Include="Models\客戶聯絡人.cs">
@@ -326,6 +330,7 @@
     <Content Include="Views\Contact\Edit.cshtml" />
     <Content Include="Views\Contact\Index.cshtml" />
     <Content Include="Views\Data\Statistics.cshtml" />
+    <Content Include="Views\Shared\Error.Entity.cshtml" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

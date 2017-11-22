@@ -1,4 +1,4 @@
-﻿@model IEnumerable<CMSite.Models.客戶聯絡人>
+﻿@model CMSite.Models.SearchModel.CustomerContactSearchModel
 
 @{
     ViewBag.Title = "Index";
@@ -6,12 +6,31 @@
 }
 
 <h2>客戶聯絡人管理-Index</h2>
-<form method="get">
+@using (Html.BeginForm("Index", "Contact", FormMethod.Get))
+{
     <div class="form-inline">
-        <input type="search" name="keyword" placeholder="請輸入 [姓名] 關鍵字" class="form-control" />
-        <input type="submit" value="搜尋" class="btn btn-primary" />
+        @Html.TextBoxFor(model => model.Keyword, new { placeholder = "請輸入 [姓名] 關鍵字", id = "txtKeyword", @class = "form-control" })
+        @Html.HiddenFor(model => model.JobTitleFilter, new { id = "hdfJobTitleFilter" })
+        @Html.HiddenFor(model => model.IsSort, new { id = "hdfIsSOrt", @Value = Model.IsSort })
+        @Html.HiddenFor(model => model.CurrentSortColumn, new { id = "hdfCurrentSortColumn", @Value = Model.CurrentSortColumn })
+        @Html.HiddenFor(model => model.SortColumn, new { id = "hdfSortColumn" })
+        @Html.HiddenFor(model => model.SortDirection, new { id = "hdfSortDirection", @Value = Model.SortDirection })
+        <button type="submit" id="btnSearch" class="btn btn-primary">
+            <span class="glyphicon glyphicon-search"></span>
+            <span>搜尋</span>
+        </button>
+        @Html.ActionLink("匯出表格", "Export",
+                         new
+                         {
+                             Keyword = Model.Keyword,
+                             JobTitleFilter = Model.JobTitleFilter,
+                             CurrentSortColumn = Model.CurrentSortColumn,
+                             SortColumn = Model.SortColumn,
+                             SortDirection = Model.SortDirection
+                         },
+                         new { @Class = "btn btn-info" })
     </div>
-</form>
+}
 <br />
 <p>
     @Html.ActionLink("Create New", "Create")
@@ -19,43 +38,51 @@
 <table class="table">
     <tr>
         <th>
-            @Html.ActionLink("職稱", "Index", new { keyword = ViewBag.Keyword, jobtitle = ViewBag.JobTitle, sort = true, orderby = "職稱", descYn = ViewBag.DescYn })
+            <a href="#" onclick="SortColumn('@Html.NameFor(o=>o.DataModel.First().職稱)');">
+                @Html.DisplayNameFor(model => model.DataModel.First().職稱)
+            </a>
             <div class="btn-group">
                 <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li>
-                        @Html.ActionLink("取消篩選", "Index", new { keyword = "", jobtitle = "", orderby = ViewBag.OrderBy, desc = ViewBag.DescYn })
-                    </li>
+                    <li onclick="FilterClick('');"><a href='#'>取消篩選</a></li>
                     @foreach (string item in JobTitleList)
                     {
-                        <li>
-                            @Html.ActionLink(item, "Index", new { keyword = ViewBag.Keyword, jobtitle = item, orderby = ViewBag.OrderBy, descYn = ViewBag.DescYn })
-                        </li>
+                        <li onclick="FilterClick('@(item)');"><a href='#'>@(item)</a></li>
                     }
                 </ul>
             </div>
         </th>
         <th>
-            @Html.ActionLink("姓名", "Index", new { keyword = ViewBag.Keyword, jobtitle = ViewBag.JobTitle, sort = true, orderby = "姓名", descYn = ViewBag.DescYn })
+            <a href="#" onclick="SortColumn('@Html.NameFor(o=>o.DataModel.First().姓名)');">
+                @Html.DisplayNameFor(model => model.DataModel.First().姓名)
+            </a>
         </th>
         <th>
-            @Html.ActionLink("Email", "Index", new { keyword = ViewBag.Keyword, jobtitle = ViewBag.JobTitle, sort = true, orderby = "Email", descYn = ViewBag.DescYn })
+            <a href="#" onclick="SortColumn('@Html.NameFor(o=>o.DataModel.First().Email)');">
+                @Html.DisplayNameFor(model => model.DataModel.First().Email)
+            </a>
         </th>
         <th>
-            @Html.ActionLink("手機", "Index", new { keyword = ViewBag.Keyword, jobtitle = ViewBag.JobTitle, sort = true, orderby = "手機", descYn = ViewBag.DescYn })
+            <a href="#" onclick="SortColumn('@Html.NameFor(o=>o.DataModel.First().手機)');">
+                @Html.DisplayNameFor(model => model.DataModel.First().手機)
+            </a>
         </th>
         <th>
-            @Html.ActionLink("電話", "Index", new { keyword = ViewBag.Keyword, jobtitle = ViewBag.JobTitle, sort = true, orderby = "電話", descYn = ViewBag.DescYn })
+            <a href="#" onclick="SortColumn('@Html.NameFor(o=>o.DataModel.First().電話)');">
+                @Html.DisplayNameFor(model => model.DataModel.First().電話)
+            </a>
         </th>
         <th>
-            @Html.ActionLink("客戶名稱", "Index", new { keyword = ViewBag.Keyword, jobtitle = ViewBag.JobTitle, sort = true, orderby = "客戶名稱", descYn = ViewBag.DescYn })
+            <a href="#" onclick="SortColumn('@Html.NameFor(o=>o.DataModel.First().客戶資料.客戶名稱)');">
+                @Html.DisplayNameFor(model => model.DataModel.First().客戶資料.客戶名稱)
+            </a>
         </th>
         <th></th>
     </tr>
 
-    @foreach (var item in Model)
+    @foreach (var item in Model.DataModel)
     {
         <tr>
             <td>
@@ -85,3 +112,17 @@
     }
 
 </table>
+@section Scripts{
+    <script type="text/javascript">
+        function SortColumn(sortColumn) {
+            $("#hdfSortColumn").val(sortColumn);
+            $("#hdfIsSOrt").val(true);
+            $("#btnSearch").click();
+        }
+
+        function FilterClick(jobTitle) {
+            $("#hdfJobTitleFilter").val(jobTitle);
+            $("#btnSearch").click();
+        }
+    </script>
+}

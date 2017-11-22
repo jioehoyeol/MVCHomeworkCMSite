@@ -1,18 +1,16 @@
-﻿using ClosedXML.Excel;
-using CMSite.Data;
+﻿using CMSite.ActionFilter;
+using CMSite.DataAccess;
+using CMSite.Extension;
 using CMSite.Models;
-using System.Collections.Generic;
+using CMSite.Models.SearchModel;
+using System;
 using System.Data;
 using System.Data.Entity;
-using System.IO;
+using System.Data.Entity.Validation;
 using System.Linq;
 using System.Linq.Dynamic;
 using System.Net;
-using System.Reflection;
 using System.Web.Mvc;
-using CMSite.Extension;
-using CMSite.ActionFilter;
-using System;
 
 namespace CMSite.Controllers
 {
@@ -21,30 +19,13 @@ namespace CMSite.Controllers
         // GET: Data/Index
         public ActionResult Index(CustomerDataSearchModel searchData)
         {
-            #region 排序資料升冪/降冪判斷
-            if (!string.IsNullOrEmpty(searchData.SortColumn))
+            if(TempData["CustomerDataSearchModel"] != null)
             {
-                if (searchData.IsSort)
-                {
-                    if (searchData.CurrentSortColumn.Equals(searchData.SortColumn))
-                    {
-                        searchData.SortDirection = searchData.SortDirection.Equals("asc") ? "desc" : "asc";
-                    }
-                    else
-                    {
-                        searchData.CurrentSortColumn = searchData.SortColumn;
-                        searchData.SortDirection = "asc";
-                    }
-                    searchData.IsSort = false;
-                }
+                searchData = TempData["CustomerDataSearchModel"] as CustomerDataSearchModel;
             }
-            else
-            {
-                searchData.CurrentSortColumn = "CustomerName";
-                searchData.SortColumn = "CustomerName";
-                searchData.SortDirection = "asc";
-            }
-            #endregion
+
+            //排序資料升冪/降冪判斷
+            ModelSort("CustomerName", searchData);
 
             //取得關鍵字查詢下拉選單
             ViewBag.KeywordKindList = SelectListItemDataDAO.QueryKeywordKindList();
@@ -63,50 +44,8 @@ namespace CMSite.Controllers
             CustomerDataDAO dao = new CustomerDataDAO();
             var result = dao.QueryData(searchData).ToDataTable();
 
-            //轉成Excel
-            var workbook = new XLWorkbook();
-            workbook.Worksheets.Add(result, "CustomerData");
-
-            #region 寫法二(已註解)
-            //var sheet = workbook.Worksheets.Add("CustomerData");
-            //int columnIndex = 1;
-            //int rowIndex = 1;
-            ////標題列
-            //string[] titleList = new string[] { "Id", "客戶名稱", "統一編號", "電話", "傳真", "地址", "Email", "客戶分類" };
-            //foreach (var title in titleList)
-            //{
-            //    sheet.Cell(rowIndex, columnIndex).Value = title;
-            //    columnIndex++;
-            //}
-            ////內容列
-            //rowIndex = 2;
-            //foreach (var data in result)
-            //{
-            //    sheet.Cell(rowIndex, 1).Value = data.Id;
-            //    sheet.Cell(rowIndex, 2).Value = data.CustomerName;
-            //    sheet.Cell(rowIndex, 3).Value = data.TaxNumber;
-            //    sheet.Cell(rowIndex, 4).Value = data.Telephone;
-            //    sheet.Cell(rowIndex, 5).Value = data.Fax;
-            //    sheet.Cell(rowIndex, 6).Value = data.Address;
-            //    sheet.Cell(rowIndex, 7).Value = data.Email;
-            //    sheet.Cell(rowIndex, 8).Value = data.Category;
-            //    rowIndex++;
-            //}
-
-            //foreach (IXLColumn col in sheet.Columns())
-            //{
-            //    col.AdjustToContents();
-            //}
-            #endregion
-
-            MemoryStream exportStream = new MemoryStream();
-            workbook.SaveAs(exportStream);
-            workbook.Dispose();
-
-            exportStream.Seek(0, SeekOrigin.Begin);
-            return File(exportStream,
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        "CustomerData.xlsx");
+            //匯出Excel
+            return ExportExcel(result, "CustomerData");
         }
 
         // GET: Data/GEtCustomerType
@@ -130,7 +69,16 @@ namespace CMSite.Controllers
         {
             CustomerDataDAO dao = new CustomerDataDAO();
             var result = dao.QueryStatisticData();
+
             return View(result);
+        }
+
+        public ActionResult StatisticsExport()
+        {
+            CustomerDataDAO dao = new CustomerDataDAO();
+            var result = dao.QueryStatisticData().ToDataTable();
+
+            return ExportExcel(result, "StatisticData");
         }
 
         // GET: Data/Details/5
@@ -145,6 +93,8 @@ namespace CMSite.Controllers
             {
                 return HttpNotFound();
             }
+
+            KeepCustomerDataSearchModel();
             return View(客戶資料);
         }
 
@@ -152,6 +102,7 @@ namespace CMSite.Controllers
         [CustomerCategoryDropDownList]
         public ActionResult Create()
         {
+            KeepCustomerDataSearchModel();
             return View();
         }
 
@@ -161,16 +112,20 @@ namespace CMSite.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [CustomerCategoryDropDownList]
-        public ActionResult Create([Bind(Include = "Id,客戶名稱,統一編號,電話,傳真,地址,Email,客戶分類")] 客戶資料 客戶資料)
+        [HandleError(ExceptionType = typeof(DbEntityValidationException), View = "Error.Entity")]
+        public ActionResult Create(FormCollection form)
         {
-            if (ModelState.IsValid)
+            客戶資料 data = new 客戶資料();
+            if (TryUpdateModel(data, new string[] { "客戶名稱","統一編號","電話","傳真","地址","Email","客戶分類" }))
             {
-                db.客戶資料.Add(客戶資料);
+                data.電話 = data.電話.Replace("8", "A");
+
+                db.客戶資料.Add(data);
                 db.SaveChanges();
                 return RedirectToAction("Index");
             }
 
-            return View(客戶資料);
+            return View(data);
         }
 
         // GET: Data/Edit/5
@@ -187,6 +142,7 @@ namespace CMSite.Controllers
                 return HttpNotFound();
             }
 
+            KeepCustomerDataSearchModel();
             return View(客戶資料);
         }
 
@@ -260,13 +216,14 @@ namespace CMSite.Controllers
             {
                 db.SaveChanges();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw ex;
             }
 
             return RedirectToAction("Index");
         }
+
 
         protected override void Dispose(bool disposing)
         {

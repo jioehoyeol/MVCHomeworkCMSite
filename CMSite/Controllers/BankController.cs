@@ -10,59 +10,31 @@ using CMSite.Models;
 using CMSite.Extension;
 using ClosedXML.Excel;
 using System.IO;
+using CMSite.DataAccess;
 
 namespace CMSite.Controllers
 {
-    public class BankController : Controller
+    public class BankController : BaseController
     {
-        private CustomerEntities db = new CustomerEntities();
-
         // GET: Bank
         public ActionResult Index(string keyword)
         {
-            IQueryable<Models.客戶銀行資訊> result = from b in db.客戶銀行資訊
-                                               where b.IsDelete == false
-                                               select b;
+            CustomerBankDAO dao = new CustomerBankDAO();
+            var result = dao.QueryData(keyword);
 
-            if (!string.IsNullOrEmpty(keyword))
-            {
-                result = result.Where(bank => bank.帳戶名稱.Contains(keyword)
-                                           || bank.銀行名稱.Contains(keyword)
-                                           || bank.客戶資料.客戶名稱.Contains(keyword));
-
-            }
             ViewBag.keyword = keyword;
-            return View(result.ToList());
+
+            return View(result);
         }
 
         public ActionResult Export(string keyword)
         {
-            #region 取資料
-            var result = from b in db.客戶銀行資訊
-                         where b.IsDelete == false
-                         select b;
+            //取資料
+            CustomerBankDAO dao = new CustomerBankDAO();
+            var result = dao.QueryData(keyword).ToDataTable();
 
-            if (!string.IsNullOrEmpty(keyword))
-            {
-                result = result.Where(bank => bank.帳戶名稱.Contains(keyword)
-                                           || bank.銀行名稱.Contains(keyword)
-                                           || bank.客戶資料.客戶名稱.Contains(keyword));
-
-            }
-            #endregion
-
-            //轉成Excel
-            var workbook = new XLWorkbook();
-            workbook.Worksheets.Add(result.ToDataTable(), "CustomerBank");
-
-            MemoryStream exportStream = new MemoryStream();
-            workbook.SaveAs(exportStream);
-            workbook.Dispose();
-
-            exportStream.Seek(0, SeekOrigin.Begin);
-            return File(exportStream,
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        "CustomerBank.xlsx");
+            //匯出Excel
+            return ExportExcel(result, "CustomerBank");
         }
 
         // GET: Bank/Details/5

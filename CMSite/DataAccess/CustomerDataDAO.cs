@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic;
 using System.Web;
+using CMSite.Models.SearchModel;
 using CMSite.Models;
 
-namespace CMSite.Data
+
+namespace CMSite.DataAccess
 {
     public class CustomerDataDAO : BaseDAO
     {

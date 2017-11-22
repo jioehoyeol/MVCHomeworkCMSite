@@ -5,7 +5,9 @@
 }
 
 <h2>Statistics</h2>
-
+@Html.ActionLink("匯出表格", "StatisticsExport", null, new { @Class = "btn btn-info pull-right" })
+<br />
+<br />
 <table class="table">
     <tr>
         <th>
@@ -20,18 +22,19 @@
         <th></th>
     </tr>
 
-@foreach (var item in Model) {
-    <tr>
-        <td>
-            @Html.DisplayFor(modelItem => item.CustomerName)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.ContactCount)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.BankCount)
-        </td>
-    </tr>
-}
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.CustomerName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.ContactCount)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.BankCount)
+            </td>
+        </tr>
+    }
 
 </table>

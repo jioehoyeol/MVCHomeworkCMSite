@@ -2,13 +2,25 @@ using CMSite.Models.CustomAttributes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 
 namespace CMSite.Models
 {
     [MetadataType(typeof(客戶資料MetaData))]
-    public partial class 客戶資料
+    public partial class 客戶資料 : IValidatableObject
     {
-        
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            using (CustomerEntities db = new CustomerEntities())
+            {
+                if (db.客戶資料.Any(o => o.Id != this.Id && o.Email == this.Email && o.IsDelete == false))
+                {
+                    yield return new ValidationResult(
+                                    "輸入的 Email 已存在，請重新輸入！",
+                                    new string[] { "Email" });
+                }
+            }
+        }
     }
 
     public partial class 客戶資料MetaData
