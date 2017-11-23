@@ -1,0 +1,97 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Meta -->
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>@ViewBag.Title - CMSite</title>
+    <!-- CSS -->
+    @Styles.Render("~/Content/metro-css")
+    @Scripts.Render("~/bundles/modernizr")
+</head>
+<body>
+    <!-- start: Header -->
+    <div class="navbar navbar-fixed-top">
+        <div class="navbar-inner">
+            <div class="container-fluid">
+                <a class="btn btn-navbar" data-toggle="collapse" data-target=".top-nav.nav-collapse,.sidebar-nav.nav-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </a>
+                <a class="brand" href="@Url.Action("Index","Home")"><span>CMSite</span></a>
+
+                <!-- Header Menu -->
+                <div class="nav-no-collapse header-nav">
+                    <ul class="nav pull-right">
+                        <!-- start: User Dropdown -->
+                        <li>
+                            <a class="blue cm-brand" href="@Url.Action("Index","Home")"><span>首頁</span></a>
+                        </li>
+                        <li>
+                            <a class="blue cm-brand" href="@Url.Action("About","Home")"><span>關於</span></a>
+                        </li>
+                        <li>
+                            <a class="blue cm-brand" href="@Url.Action("Contact","Home")"><span>聯絡</span></a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- start: Header -->
+
+    <div class="container-fluid-full" style="margin: 40px 0px;">
+        <div class="row-fluid">
+            <!-- start: Main Menu -->
+            <div id="sidebar-left">
+                <div class="nav-collapse sidebar-nav">
+                    <ul class="nav nav-tabs nav-stacked main-menu">
+                        <li>
+                            <a href="@Url.Action("Index","Data")">
+                                <span>客戶資料管理</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Index","Bank")">
+                                <span>客戶銀行帳戶管理</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Index","Contact")">
+                                <span>客戶聯絡人管理</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="@Url.Action("Statistics","Data")">
+                                <span>客戶資料統計</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <!-- end: Main Menu -->
+            <!-- start: Content -->
+            <div id="content" class="span12">
+                @RenderBody()
+            </div>
+            <!-- end: Content -->
+
+        </div>
+    </div>
+    <div class="clearfix"></div>
+
+    <div class="navbar navbar-fixed-bottom">
+        <footer>
+            <p>
+                <span style="text-align:left;float:left">&copy; 2013 <a href="http://jiji262.github.io/Bootstrap_Metro_Dashboard/" alt="Bootstrap_Metro_Dashboard">Bootstrap Metro Dashboard</a></span>
+            </p>
+        </footer>
+    </div>
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

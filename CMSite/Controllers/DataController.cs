@@ -19,7 +19,7 @@ namespace CMSite.Controllers
         // GET: Data/Index
         public ActionResult Index(CustomerDataSearchModel searchData)
         {
-            if(TempData["CustomerDataSearchModel"] != null)
+            if (TempData["CustomerDataSearchModel"] != null)
             {
                 searchData = TempData["CustomerDataSearchModel"] as CustomerDataSearchModel;
             }
@@ -116,7 +116,7 @@ namespace CMSite.Controllers
         public ActionResult Create(FormCollection form)
         {
             客戶資料 data = new 客戶資料();
-            if (TryUpdateModel(data, new string[] { "客戶名稱","統一編號","電話","傳真","地址","Email","客戶分類" }))
+            if (TryUpdateModel(data, new string[] { "客戶名稱", "統一編號", "電話", "傳真", "地址", "Email", "客戶分類" }))
             {
                 data.電話 = data.電話.Replace("8", "A");
 
@@ -223,7 +223,6 @@ namespace CMSite.Controllers
 
             return RedirectToAction("Index");
         }
-
 
         protected override void Dispose(bool disposing)
         {
